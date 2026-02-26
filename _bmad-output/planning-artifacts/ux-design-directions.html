@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bmadcalculator — Design Direction Exploration</title>
+<style>
+  :root {
+    --color-bg: #FAFAF7;
+    --color-display-bg: #F0EEE8;
+    --color-digit: #FFFFFF;
+    --color-text-primary: #2C3E50;
+    --color-op-add: #FF6B35;
+    --color-op-sub: #3B82F6;
+    --color-op-mul: #22C55E;
+    --color-op-div: #A855F7;
+    --color-equals: #F59E0B;
+    --color-oops: #CBD5E1;
+    --color-text-equation: #334155;
+    --color-text-answer: #1E293B;
+    --color-display-border: #DDD8CF;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica Neue, sans-serif;
+    background: #E8E6E0;
+    padding: 32px 16px;
+    color: #1E293B;
+  }
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #1E293B;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #64748B;
+    margin-bottom: 40px;
+  }
+  .directions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 380px));
+    gap: 40px;
+    justify-content: center;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .direction-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  }
+  .direction-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94A3B8;
+    margin-bottom: 4px;
+  }
+  .direction-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1E293B;
+    margin-bottom: 4px;
+  }
+  .direction-desc {
+    font-size: 13px;
+    color: #64748B;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* ── CALCULATOR SHELL ── */
+  .calc {
+    background: var(--color-bg);
+    border-radius: 20px;
+    padding: 16px;
+    border: 1px solid #E2DDD5;
+    width: 100%;
+  }
+
+  /* ── DISPLAY AREA ── */
+  .display {
+    background: var(--color-display-bg);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    border: 1px solid var(--color-display-border);
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .equation-line {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--color-text-equation);
+    min-height: 24px;
+    letter-spacing: 0.02em;
+  }
+  .answer-line {
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--color-text-answer);
+    line-height: 1;
+    text-align: right;
+  }
+  .answer-line.placeholder {
+    color: #CBD5E1;
+    font-size: 36px;
+  }
+
+  /* ── BUTTONS SHARED ── */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: transform 0.08s, box-shadow 0.08s, filter 0.08s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.8) inset;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(0.94); box-shadow: 0 1px 2px rgba(0,0,0,0.10); }
+  .btn:hover { filter: brightness(0.95); }
+
+  .btn-digit {
+    background: var(--color-digit);
+    color: var(--color-text-primary);
+    font-size: 22px;
+  }
+  .btn-zero { font-size: 22px; }
+
+  .btn-op {
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .btn-op.add { background: var(--color-op-add); }
+  .btn-op.sub { background: var(--color-op-sub); }
+  .btn-op.mul { background: var(--color-op-mul); }
+  .btn-op.div { background: var(--color-op-div); }
+
+  .btn-equals {
+    background: var(--color-equals);
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(245,158,11,0.35), 0 1px 0 rgba(255,255,255,0.4) inset;
+  }
+  .btn-oops {
+    background: var(--color-oops);
+    color: #475569;
+    font-size: 18px;
+  }
+
+  /* ── DIRECTION 1: Classic Column ── */
+  .grid-d1 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) 1.1fr;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 10px;
+    aspect-ratio: auto;
+  }
+  .grid-d1 .btn { height: 62px; }
+  .grid-d1 .btn-op { border-radius: 12px; }
+  /* operators in column 4, rows 1-4 */
+  .grid-d1 .op-add { grid-column: 4; grid-row: 1; }
+  .grid-d1 .op-sub { grid-column: 4; grid-row: 2; }
+  .grid-d1 .op-mul { grid-column: 4; grid-row: 3; }
+  .grid-d1 .op-div { grid-column: 4; grid-row: 4; }
+
+  /* ── DIRECTION 2: Operators Top Row ── */
+  .grid-d2 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto repeat(4, 1fr);
+    gap: 10px;
+  }
+  .grid-d2 .ops-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .grid-d2 .ops-row .btn-op { height: 52px; border-radius: 10px; font-size: 20px; }
+  .grid-d2 .digit-rows {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .grid-d2 .digit-rows .btn { height: 62px; }
+  .grid-d2 .digit-rows .btn-equals {
+    grid-row: 1 / 3;
+    grid-column: 4;
+    height: 134px;
+    font-size: 32px;
+  }
+  .grid-d2 .digit-rows .btn-oops {
+    grid-column: 4;
+    grid-row: 3;
+  }
+  .grid-d2 .digit-rows .btn-zero {
+    grid-column: 1 / 3;
+  }
+
+  /* ── DIRECTION 3: Big Equals Bottom ── */
+  .grid-d3 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 10px;
+  }
+  .grid-d3 .btn { height: 60px; }
+  .grid-d3 .btn-equals {
+    grid-column: 1 / -1;
+    font-size: 28px;
+    height: 68px;
+    border-radius: 14px;
+  }
+  .grid-d3 .btn-zero { grid-column: 1 / 3; }
+
+  /* ── PROS/CONS ── */
+  .analysis {
+    margin-top: 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    border-top: 1px solid #F0EEE8;
+    padding-top: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .analysis-col h4 {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .analysis-col.pros h4 { color: #22C55E; }
+  .analysis-col.cons h4 { color: #EF4444; }
+  .analysis-col ul { list-style: none; }
+  .analysis-col ul li { color: #475569; padding: 1px 0; }
+  .analysis-col.pros ul li::before { content: "✓ "; color: #22C55E; font-weight: 700; }
+  .analysis-col.cons ul li::before { content: "△ "; color: #F59E0B; font-weight: 700; }
+
+  .chosen-badge {
+    display: inline-block;
+    background: #F59E0B;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<h1>Bmadcalculator — Design Direction Exploration</h1>
+<p class="subtitle">Three layout approaches for grade 3 tablet calculator · Open in browser to compare</p>
+
+<div class="directions-grid">
+
+  <!-- DIRECTION 1: Classic Column -->
+  <div class="direction-card">
+    <div class="direction-label">Direction 1</div>
+    <div class="direction-title">"Classic Column" <span class="chosen-badge">Recommended</span></div>
+    <div class="direction-desc">Operators in a right column. Digit pad 3×3 on the left. Most familiar to adults — parents recognise it immediately. Operators are always visible without scanning.</div>
+
+    <div class="calc">
+      <div class="display">
+        <div class="equation-line">47 + 36 =</div>
+        <div class="answer-line">83</div>
+      </div>
+      <div class="grid-d1">
+        <!-- Row 1 -->
+        <button class="btn btn-digit">7</button>
+        <button class="btn btn-digit">8</button>
+        <button class="btn btn-digit">9</button>
+        <button class="btn btn-op add op-add">+</button>
+        <!-- Row 2 -->
+        <button class="btn btn-digit">4</button>
+        <button class="btn btn-digit">5</button>
+        <button class="btn btn-digit">6</button>
+        <button class="btn btn-op sub op-sub">−</button>
+        <!-- Row 3 -->
+        <button class="btn btn-digit">1</button>
+        <button class="btn btn-digit">2</button>
+        <button class="btn btn-digit">3</button>
+        <button class="btn btn-op mul op-mul">×</button>
+        <!-- Row 4 -->
+        <button class="btn btn-oops">⌫</button>
+        <button class="btn btn-digit btn-zero">0</button>
+        <button class="btn btn-equals">=</button>
+        <button class="btn btn-op div op-div">÷</button>
+      </div>
+    </div>
+
+    <div class="analysis">
+      <div class="analysis-col pros">
+        <h4>Strengths</h4>
+        <ul>
+          <li>Parent-recognisable layout</li>
+          <li>Operators always in view</li>
+          <li>Digits and operators clearly separated by position</li>
+          <li>Equals easy to find (bottom-centre)</li>
+        </ul>
+      </div>
+      <div class="analysis-col cons">
+        <h4>Watch-outs</h4>
+        <ul>
+          <li>Operator column is slim — tap targets slightly narrower</li>
+          <li>Equals shares a row with oops and 0 — crowded bottom row</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIRECTION 2: Operators Top Row -->
+  <div class="direction-card">
+    <div class="direction-label">Direction 2</div>
+    <div class="direction-title">"Operators First"</div>
+    <div class="direction-desc">Four operator buttons in a prominent top row. Equals is a large double-height button on the right. This hierarchy says "choose your operation first" — matches how Grade 3 teachers explain maths.</div>
+
+    <div class="calc">
+      <div class="display">
+        <div class="equation-line">63 − 28 =</div>
+        <div class="answer-line">35</div>
+      </div>
+      <div class="grid-d2">
+        <div class="ops-row">
+          <button class="btn btn-op add">+</button>
+          <button class="btn btn-op sub">−</button>
+          <button class="btn btn-op mul">×</button>
+          <button class="btn btn-op div">÷</button>
+        </div>
+        <div class="digit-rows">
+          <button class="btn btn-digit">7</button>
+          <button class="btn btn-digit">8</button>
+          <button class="btn btn-digit">9</button>
+          <button class="btn btn-equals">=</button>
+          <button class="btn btn-digit">4</button>
+          <button class="btn btn-digit">5</button>
+          <button class="btn btn-digit">6</button>
+          <!-- equals spans rows 1-2 col 4, already placed -->
+          <button class="btn btn-digit">1</button>
+          <button class="btn btn-digit">2</button>
+          <button class="btn btn-digit">3</button>
+          <button class="btn btn-oops">⌫</button>
+          <button class="btn btn-digit btn-zero">0</button>
+          <!-- oops at col 4 row 3 -->
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis">
+      <div class="analysis-col pros">
+        <h4>Strengths</h4>
+        <ul>
+          <li>Operators are visually dominant — the differentiator is front and centre</li>
+          <li>Equals is a very large target — can't miss it</li>
+          <li>Clear visual hierarchy: pick operation → enter numbers → equals</li>
+        </ul>
+      </div>
+      <div class="analysis-col cons">
+        <h4>Watch-outs</h4>
+        <ul>
+          <li>Unconventional — parents may find it unfamiliar</li>
+          <li>Operator row may feel disconnected from digit entry flow</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIRECTION 3: Big Equals Bottom -->
+  <div class="direction-card">
+    <div class="direction-label">Direction 3</div>
+    <div class="direction-title">"Equals Dominant"</div>
+    <div class="direction-desc">Full-width equals button spans the entire bottom. Operators integrated into the digit grid. The equals button is unmissable — every calculation ends at the same prominent target.</div>
+
+    <div class="calc">
+      <div class="display">
+        <div class="equation-line">8 × 7 =</div>
+        <div class="answer-line">56</div>
+      </div>
+      <div class="grid-d3">
+        <button class="btn btn-digit">7</button>
+        <button class="btn btn-digit">8</button>
+        <button class="btn btn-digit">9</button>
+        <button class="btn btn-op add">+</button>
+
+        <button class="btn btn-digit">4</button>
+        <button class="btn btn-digit">5</button>
+        <button class="btn btn-digit">6</button>
+        <button class="btn btn-op sub">−</button>
+
+        <button class="btn btn-digit">1</button>
+        <button class="btn btn-digit">2</button>
+        <button class="btn btn-digit">3</button>
+        <button class="btn btn-op mul">×</button>
+
+        <button class="btn btn-oops">⌫</button>
+        <button class="btn btn-digit btn-zero">0</button>
+        <button class="btn btn-op div">÷</button>
+
+        <button class="btn btn-equals" style="grid-column:1/-1;height:68px;font-size:30px;border-radius:14px">=</button>
+      </div>
+    </div>
+
+    <div class="analysis">
+      <div class="analysis-col pros">
+        <h4>Strengths</h4>
+        <ul>
+          <li>Equals is absolutely unmissable — spans full width</li>
+          <li>Clean visual rhythm — grid + single bottom action</li>
+          <li>Operators integrated naturally into grid flow</li>
+        </ul>
+      </div>
+      <div class="analysis-col cons">
+        <h4>Watch-outs</h4>
+        <ul>
+          <li>Operators lose distinct shape identity — squashed into grid</li>
+          <li>Operator position less predictable (scattered in grid)</li>
+          <li>Oops can be confused with operator buttons nearby</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="max-width:800px;margin:48px auto 0;background:white;border-radius:16px;padding:28px 32px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+  <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;color:#1E293B">Evaluation Guide</h2>
+  <p style="font-size:13px;color:#475569;line-height:1.7;margin-bottom:16px">When choosing a direction, consider these questions from the perspective of an 8-year-old using a tablet:</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;color:#475569;line-height:1.7">
+    <div>
+      <strong style="color:#1E293B;display:block;margin-bottom:4px">Layout Clarity</strong>
+      Can Jamie tell at a glance what to tap first, second, and last?
+    </div>
+    <div>
+      <strong style="color:#1E293B;display:block;margin-bottom:4px">Operator Confidence</strong>
+      Are the four operators clearly distinct from each other and from digits?
+    </div>
+    <div>
+      <strong style="color:#1E293B;display:block;margin-bottom:4px">Equals Prominence</strong>
+      Is the equals button the most visually prominent interactive element?
+    </div>
+    <div>
+      <strong style="color:#1E293B;display:block;margin-bottom:4px">Parent Trust</strong>
+      Would Alex look at this for 5 seconds and immediately understand it?
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

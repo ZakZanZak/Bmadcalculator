@@ -1,0 +1,394 @@
+/* ============================================================
+   Bmadcalculator — Design System & Visual Shell
+   Design tokens, layout, components, and animations.
+   Implemented in Story 1.2.
+   ============================================================ */
+
+/* ─── @property registration (enables conic-gradient ring animation) ─────── */
+@property --ring-progress {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* ─── 1. Design Tokens (:root) ──────────────────────────────────────────── */
+:root {
+  /* Colours — page & display */
+  --color-bg:               #FAFAF7;
+  --color-display-bg:       #F0EEE8;
+
+  /* Colours — text */
+  --color-text-primary:     #1E293B;   /* digit/equals labels — 13.9:1 on digit bg */
+  --color-text-equation:    #334155;   /* equation display text */
+  --color-text-answer:      #1E293B;   /* answer display text */
+  --color-text-oops:        #475569;   /* oops button label */
+
+  /* Colours — digit button */
+  --color-digit:            #F1F5F9;
+
+  /* Colours — operator buttons */
+  --color-op-add:           #FF6B35;   /* + orange  — 3.2:1 on white (AA Large) */
+  --color-op-sub:           #3B82F6;   /* − blue    — 3.4:1 on white (AA Large) */
+  --color-op-mul:           #22C55E;   /* × green   — 3.1:1 on white (AA Large) */
+  --color-op-div:           #A855F7;   /* ÷ purple  — 5.1:1 on white (AA) */
+
+  /* Colours — special buttons */
+  --color-equals:           #F59E0B;   /* = amber   — 5.2:1 with dark text */
+  --color-oops:             #CBD5E1;   /* oops muted slate */
+
+  /* Colours — selected ring */
+  --color-selected-ring:    #F59E0B;
+
+  /* Colours — operator text (white) and answer animation flash */
+  --color-text-on-operator: #FFFFFF;
+  --color-answer-flash:     #FEF3C7;
+
+  /* Typography */
+  --font-family:            -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                            Helvetica Neue, sans-serif;
+  --font-size-answer:       clamp(48px, 10vw, 80px);
+  --font-size-equation:     clamp(24px, 5vw, 40px);
+  --font-size-btn-digit:    28px;
+  --font-size-btn-operator: 24px;
+  --font-size-btn-equals:   32px;
+
+  /* Sizing */
+  --btn-min-height:         60px;      /* min touch target height — exceeds WCAG 44px */
+
+  /* Spacing */
+  --gap-buttons:            12px;
+  --padding-display:        16px;
+  --border-radius-digit:    16px;
+  --border-radius-operator: 16px;
+
+  /* Animation durations — all timing in one place */
+  --anim-press-duration:    80ms;      /* button press feedback */
+  --anim-answer-duration:   400ms;     /* answer reveal bounce */
+  --anim-longpress-duration: 600ms;    /* long-press progress ring */
+}
+
+/* ─── 2. Reset ──────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── 3. Body ───────────────────────────────────────────────────────────── */
+body {
+  background-color: var(--color-bg);
+  font-family: var(--font-family);
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── 4. Calculator container ───────────────────────────────────────────── */
+#calculator {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  background-color: var(--color-bg);
+  overflow: hidden;
+}
+
+/* ─── 5. Display zones ──────────────────────────────────────────────────── */
+.display-answer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--padding-display);
+  background-color: var(--color-display-bg);
+  font-size: var(--font-size-answer);
+  font-weight: 700;
+  color: var(--color-text-answer);
+  flex: 2;
+  min-height: 80px;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.display-equation {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px var(--padding-display);
+  background-color: var(--color-display-bg);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: var(--font-size-equation);
+  font-weight: 500;
+  color: var(--color-text-equation);
+  flex: 1;
+  min-height: 48px;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ─── 6. Button grid ────────────────────────────────────────────────────── */
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--gap-buttons);
+  padding: var(--gap-buttons);
+  flex: 5;
+  background-color: var(--color-bg);
+}
+
+/* ─── 7. Digit buttons ──────────────────────────────────────────────────── */
+.btn-digit {
+  background-color: var(--color-digit);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-btn-digit);
+  font-weight: 600;
+  font-family: var(--font-family);
+  border: none;
+  border-radius: var(--border-radius-digit);
+  min-height: var(--btn-min-height);
+  width: 100%;
+  cursor: pointer;
+  transition: transform var(--anim-press-duration) ease-out,
+              box-shadow var(--anim-press-duration) ease-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.btn-digit:active {
+  transform: scale(0.92);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.btn-digit:focus-visible {
+  outline: 2px solid var(--color-selected-ring);
+  outline-offset: 2px;
+}
+
+/* ─── 8. Operator buttons ───────────────────────────────────────────────── */
+.btn-operator {
+  color: var(--color-text-on-operator);
+  font-size: var(--font-size-btn-operator);
+  font-weight: 700;
+  font-family: var(--font-family);
+  border: none;
+  border-radius: var(--border-radius-operator);
+  min-height: var(--btn-min-height);
+  width: 100%;
+  cursor: pointer;
+  transition: transform var(--anim-press-duration) ease-out,
+              box-shadow var(--anim-press-duration) ease-out,
+              filter var(--anim-press-duration) ease-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.btn-operator:active {
+  transform: scale(0.90);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.btn-operator:focus-visible {
+  outline: 2px solid var(--color-selected-ring);
+  outline-offset: 2px;
+}
+
+/* Per-operator background colours */
+.btn-operator[data-value="÷"] { background-color: var(--color-op-div); }
+.btn-operator[data-value="×"] { background-color: var(--color-op-mul); }
+.btn-operator[data-value="−"] { background-color: var(--color-op-sub); }
+.btn-operator[data-value="+"] { background-color: var(--color-op-add); }
+
+/* Selected state — toggled by render() in Story 2.1 */
+.btn-operator.is-selected {
+  outline: 3px solid var(--color-selected-ring);
+  outline-offset: 2px;
+  filter: brightness(1.1);
+}
+
+/* ─── 9. Equals button ──────────────────────────────────────────────────── */
+.btn-equals {
+  grid-column: 5;
+  grid-row: 1 / span 4;
+  background-color: var(--color-equals);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-btn-equals);
+  font-weight: 700;
+  font-family: var(--font-family);
+  border: none;
+  border-radius: var(--border-radius-digit);
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  transition: transform var(--anim-press-duration) ease-out,
+              box-shadow var(--anim-press-duration) ease-out;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.btn-equals:active {
+  transform: scale(0.93);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.btn-equals:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+/* ─── 10. Oops button ───────────────────────────────────────────────────── */
+.btn-oops {
+  grid-column: span 2;   /* cols 1-2 in row 4 → 0 under col 3, + under col 4 */
+  background-color: var(--color-oops);
+  color: var(--color-text-oops);
+  font-size: var(--font-size-btn-digit);
+  font-weight: 600;
+  font-family: var(--font-family);
+  border: none;
+  border-radius: var(--border-radius-digit);
+  min-height: var(--btn-min-height);
+  width: 100%;
+  cursor: pointer;
+  transition: transform var(--anim-press-duration) ease-out,
+              box-shadow var(--anim-press-duration) ease-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.btn-oops:active {
+  transform: scale(0.92);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.btn-oops:focus-visible {
+  outline: 2px solid var(--color-selected-ring);
+  outline-offset: 2px;
+}
+
+/* Long-press ring pseudo-element (class toggled by JS in Story 3.2) */
+.btn-oops::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-selected-ring) var(--ring-progress),
+    transparent 0deg
+  );
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn-oops.is-longpress::after {
+  opacity: 1;
+  animation: ringFill var(--anim-longpress-duration) linear forwards;
+}
+
+/* ─── 11. State modifier classes ────────────────────────────────────────── */
+
+/* Shake — applied to .display-equation for incomplete equation (Story 2.1) */
+.is-shake {
+  animation: shake 200ms ease both;
+}
+
+/* Answer reveal — applied to .display-answer on equals press (Story 2.2) */
+.is-animating {
+  animation: answerReveal var(--anim-answer-duration) ease-out both;
+}
+
+/* ─── 12. Keyframes ─────────────────────────────────────────────────────── */
+
+/* Answer reveal: scale bounce + warm background flash */
+@keyframes answerReveal {
+  0%   { transform: scale(0.6); background-color: var(--color-answer-flash); }
+  60%  { transform: scale(1.08); background-color: var(--color-answer-flash); }
+  80%  { transform: scale(0.96); }
+  100% { transform: scale(1.0); background-color: var(--color-display-bg); }
+}
+
+/* Long-press ring fill — animates conic-gradient via @property */
+@keyframes ringFill {
+  from { --ring-progress: 0deg; }
+  to   { --ring-progress: 360deg; }
+}
+
+/* Gentle shake for invalid equals press */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-4px); }
+  40%       { transform: translateX(4px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+/* ─── 13. Responsive: landscape (reduced height) ────────────────────────── */
+@media (orientation: landscape) and (max-height: 600px) {
+  .display-answer {
+    flex: 1;
+    min-height: 44px;
+    font-size: clamp(28px, 6vh, 48px);
+    padding: 6px var(--padding-display);
+  }
+
+  .display-equation {
+    flex: 1;
+    min-height: 32px;
+    font-size: clamp(16px, 3vh, 28px);
+    padding: 4px var(--padding-display);
+  }
+
+  .button-grid {
+    flex: 6;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .btn-digit,
+  .btn-oops {
+    min-height: 52px;
+    font-size: clamp(18px, 3.5vh, 24px);
+  }
+
+  .btn-operator {
+    min-height: 52px;
+    font-size: clamp(16px, 3vh, 22px);
+  }
+
+  .btn-equals {
+    font-size: clamp(20px, 4vh, 28px);
+  }
+}
+
+/* ─── 14. Responsive: tablet landscape / small desktop (≥1024px) ─────────── */
+@media (min-width: 1024px) {
+  #calculator {
+    max-width: 500px;
+    height: calc(100dvh - 40px);
+    margin: 20px auto;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+  }
+}
+
+/* ─── 15. Responsive: large desktop (≥1280px) ───────────────────────────── */
+@media (min-width: 1280px) {
+  #calculator {
+    max-width: 480px;
+    height: calc(100dvh - 80px);
+    margin: 40px auto;
+  }
+}
+
+/* ─── 16. Print styles ───────────────────────────────────────────────────── */
+@media print {
+  body { display: none; }
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bmadcalculator — Simple Calculator for Grade 3</title>
+    <meta name="description" content="A calculator built for grade 3 children. Four operations, big buttons, no account needed.">
+    <!-- Open Graph for parent/teacher sharing -->
+    <meta property="og:title" content="Bmadcalculator — Simple Calculator for Grade 3">
+    <meta property="og:description" content="A calculator built for grade 3 children. Four operations, big buttons, no account needed.">
+    <link rel="stylesheet" href="style.css">
+    <!-- NO other external <link> or <script> tags — NFR11 -->
+  </head>
+  <body>
+    <main id="calculator" aria-label="Grade 3 Calculator">
+
+      <!-- Zone 1: Answer display -->
+      <div class="display-answer"
+           aria-live="assertive"
+           aria-label="answer display"
+           aria-atomic="true">?</div>
+
+      <!-- Zone 2: Equation display -->
+      <div class="display-equation"
+           role="status"
+           aria-live="assertive"
+           aria-label="equation display"
+           aria-atomic="true"></div>
+
+      <!-- Zone 3: Button grid (4-col CSS Grid layout — styled in Story 1.2) -->
+      <div class="button-grid">
+
+        <!-- Row 1 -->
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="7">7</button>
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="8">8</button>
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="9">9</button>
+        <button class="btn-operator" data-action="PRESS_OPERATOR" data-value="÷" aria-pressed="false">÷</button>
+
+        <!-- Row 2 -->
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="4">4</button>
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="5">5</button>
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="6">6</button>
+        <button class="btn-operator" data-action="PRESS_OPERATOR" data-value="×" aria-pressed="false">×</button>
+
+        <!-- Row 3 -->
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="1">1</button>
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="2">2</button>
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="3">3</button>
+        <button class="btn-operator" data-action="PRESS_OPERATOR" data-value="−" aria-pressed="false">−</button>
+
+        <!-- Row 4 -->
+        <button class="btn-oops" id="btn-oops" data-action="PRESS_OOPS">⌫</button>
+        <button class="btn-digit" data-action="PRESS_DIGIT" data-value="0">0</button>
+        <button class="btn-operator" data-action="PRESS_OPERATOR" data-value="+" aria-pressed="false">+</button>
+
+        <!-- Equals spans rows 1-4 in column 5 — CSS grid-row: span 4 applied in Story 1.2 -->
+        <button class="btn-equals" data-action="PRESS_EQUALS">=</button>
+
+      </div>
+    </main>
+    <script src="app.js"></script>
+    <!-- NO other <script> tags — NFR11 -->
+  </body>
+</html>
