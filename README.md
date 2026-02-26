@@ -8,7 +8,7 @@ Open `index.html` in any modern web browser. No installation required.
 
 ## Live App
 
-🔗 **[Open Bmadcalculator](https://github.com/USERNAME/bmadcalculator)** ← replace with your GitHub Pages URL after deployment
+🔗 **[Open Bmadcalculator](https://zakzanzak.github.io/Bmadcalculator/)**
 
 ## Development
 
