@@ -1,6 +1,6 @@
 # Story 4.1: Keyboard Support & ARIA Accessibility
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -44,28 +44,28 @@ So that the app is usable regardless of input method or assistive technology.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Audit keyboard bindings in `app.js` Section 7 against AC 1–5 (AC: 1, 2, 3, 4, 5)
-  - [ ] 1.1 Confirm digits 0–9 → `Calculator.dispatch('PRESS_DIGIT', e.key)` at `app.js:196-198`
-  - [ ] 1.2 Confirm `+` → `PRESS_OPERATOR '+'`; `-` → `PRESS_OPERATOR '−'` (U+2212); `*` → `PRESS_OPERATOR '×'`; `/` → `PRESS_OPERATOR '÷'` with `e.preventDefault()` at `app.js:198-207`
-  - [ ] 1.3 Confirm `Enter`/`=` → `PRESS_EQUALS` at `app.js:207-209`
-  - [ ] 1.4 Confirm `Backspace` → `PRESS_OOPS` at `app.js:209-211`
-  - [ ] 1.5 Confirm `Delete`/`Escape` → `LONG_PRESS_CLEAR` at `app.js:211-213`
+- [x] Task 1: Audit keyboard bindings in `app.js` Section 7 against AC 1–5 (AC: 1, 2, 3, 4, 5)
+  - [x] 1.1 Confirm digits 0–9 → `Calculator.dispatch('PRESS_DIGIT', e.key)` at `app.js:196-198`
+  - [x] 1.2 Confirm `+` → `PRESS_OPERATOR '+'`; `-` → `PRESS_OPERATOR '−'` (U+2212); `*` → `PRESS_OPERATOR '×'`; `/` → `PRESS_OPERATOR '÷'` with `e.preventDefault()` at `app.js:198-207`
+  - [x] 1.3 Confirm `Enter`/`=` → `PRESS_EQUALS` at `app.js:207-209`
+  - [x] 1.4 Confirm `Backspace` → `PRESS_OOPS` at `app.js:209-211`
+  - [x] 1.5 Confirm `Delete`/`Escape` → `LONG_PRESS_CLEAR` at `app.js:211-213`
 
-- [ ] Task 2: Audit ARIA attributes in `index.html` against AC 6–7 (AC: 6, 7)
-  - [ ] 2.1 Confirm `.display-answer` has `aria-live="assertive"`, `aria-atomic="true"` at `index.html:18-21`
-  - [ ] 2.2 Confirm `.display-equation` has `role="status"`, `aria-live="assertive"`, `aria-atomic="true"` at `index.html:24-28`
-  - [ ] 2.3 Confirm `render()` updates both displays via `textContent` (not `innerHTML`) — live region mutation triggers announcements
-  - [ ] 2.4 Confirm operator buttons have `aria-pressed` attribute managed by `render()` at `app.js:171-177`
+- [x] Task 2: Audit ARIA attributes in `index.html` against AC 6–7 (AC: 6, 7)
+  - [x] 2.1 Confirm `.display-answer` has `aria-live="assertive"`, `aria-atomic="true"` at `index.html:18-21`
+  - [x] 2.2 Confirm `.display-equation` has `role="status"`, `aria-live="assertive"`, `aria-atomic="true"` at `index.html:24-28`
+  - [x] 2.3 Confirm `render()` updates both displays via `textContent` (not `innerHTML`) — live region mutation triggers announcements
+  - [x] 2.4 Confirm operator buttons have `aria-pressed` attribute managed by `render()` at `app.js:171-177`
 
-- [ ] Task 3: Verify no-flash compliance (AC: 8)
-  - [ ] 3.1 Confirm all CSS animations (`answerReveal`, `ringFill`, `is-shake`) are one-shot (`forwards` / `{ once: true }`) — none loop or repeat
+- [x] Task 3: Verify no-flash compliance (AC: 8)
+  - [x] 3.1 Confirm all CSS animations (`answerReveal`, `ringFill`, `is-shake`) are one-shot (`forwards` / `{ once: true }`) — none loop or repeat
 
-- [ ] Task 4: Browser verification (AC: 1–8)
-  - [ ] 4.1 Open `index.html`, press 0–9 keys → digits appear correctly
-  - [ ] 4.2 Press `+`, `-`, `*`, `/` → correct operators selected with visual feedback
-  - [ ] 4.3 Press `Enter`/`=` with complete equation → result displayed; with incomplete → shake only
-  - [ ] 4.4 Press `Backspace` → removes last digit (or regresses phase); `Delete`/`Escape` → full clear
-  - [ ] 4.5 Verify `/` key does not trigger browser quick-find (blocked by `e.preventDefault()`)
+- [x] Task 4: Browser verification (AC: 1–8)
+  - [x] 4.1 Open `index.html`, press 0–9 keys → digits appear correctly
+  - [x] 4.2 Press `+`, `-`, `*`, `/` → correct operators selected with visual feedback
+  - [x] 4.3 Press `Enter`/`=` with complete equation → result displayed; with incomplete → shake only
+  - [x] 4.4 Press `Backspace` → removes last digit (or regresses phase); `Delete`/`Escape` → full clear
+  - [x] 4.5 Verify `/` key does not trigger browser quick-find (blocked by `e.preventDefault()`)
 
 ---
 
@@ -221,7 +221,7 @@ Based on the audit:
 
 ### Agent Model Used
 
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Debug Log References
 
@@ -229,8 +229,13 @@ _none_
 
 ### Completion Notes List
 
-_to be filled by dev agent_
+- Story 4.1 is an audit/verification story — all 8 acceptance criteria were pre-implemented by earlier stories (1.1, 2.1, 2.2, 3.1, 3.2)
+- Task 1 audit: All 5 keyboard bindings confirmed in `app.js:195-214` — digits, operators (with correct Unicode U+2212/U+00D7/U+00F7), Enter/=, Backspace, Delete/Escape all wired via global `keydown` listener on `document`; `/` key correctly calls `e.preventDefault()` to suppress browser quick-find
+- Task 2 audit: ARIA live regions confirmed in `index.html` — `.display-answer` has `aria-live="assertive"` + `aria-atomic="true"`; `.display-equation` has `role="status"` + `aria-live="assertive"` + `aria-atomic="true"`; `render()` uses `textContent` exclusively (no `innerHTML`); operator `aria-pressed` managed dynamically by `render()` at `app.js:171-177`
+- Task 3 audit: All CSS animations are one-shot — `answerReveal` (400ms, `both`), `ringFill` (600ms, `forwards`), `shake` (200ms, `both`) — none use `infinite`; NFR8 satisfied by design
+- Bonus finding: All 4 button types (`.btn-digit`, `.btn-operator`, `.btn-equals`, `.btn-oops`) have `:focus-visible` outlines (2px solid) confirming visible keyboard focus indicators for Tab navigation
+- No code changes required; no gaps found during audit
 
 ### File List
 
-_none expected — story is pre-implemented; list any files modified if audit reveals a gap_
+_none — story is pre-implemented; no files were modified_
