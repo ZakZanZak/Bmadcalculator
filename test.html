@@ -3,9 +3,102 @@
   <head>
     <meta charset="UTF-8">
     <title>Bmadcalculator — Test Suite</title>
+    <style>
+      body { font-family: sans-serif; padding: 20px; max-width: 600px; }
+      #summary { font-size: 1.2em; font-weight: bold; margin: 16px 0; }
+      p { margin: 4px 0; }
+    </style>
   </head>
   <body>
     <h1>Bmadcalculator Test Suite</h1>
-    <p>TODO: Arithmetic assertions — Story 4.3</p>
+    <div id="summary"></div>
+    <div id="results"></div>
+
+    <!-- Hidden stub DOM — app.js requires these elements to exist on load -->
+    <main id="calculator" hidden>
+      <div class="display-answer"></div>
+      <div class="display-equation"></div>
+      <button id="btn-oops"></button>
+      <button class="btn-operator" data-value="+"></button>
+      <button class="btn-operator" data-value="−"></button>
+      <button class="btn-operator" data-value="×"></button>
+      <button class="btn-operator" data-value="÷"></button>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+      // ─── Test helper (~12 lines) ─────────────────────────────────────────
+      let passed = 0, failed = 0;
+      const results = document.getElementById('results');
+      function assert(condition, label) {
+        const p = document.createElement('p');
+        p.textContent = (condition ? '✓ ' : '✗ ') + label;
+        p.style.color = condition ? 'green' : 'red';
+        results.appendChild(p);
+        condition ? passed++ : failed++;
+      }
+      function reset() { Calculator.dispatch('LONG_PRESS_CLEAR'); }
+
+      // ─── AC 2: Four operations ───────────────────────────────────────────
+      assert(calculate('3', '+', '4') === 7,        'addition: 3 + 4 = 7');
+      assert(calculate('10', '−', '4') === 6,       'subtraction: 10 − 4 = 6');
+      assert(calculate('3', '×', '4') === 12,       'multiplication: 3 × 4 = 12');
+      assert(calculate('12', '÷', '4') === 3,       'division: 12 ÷ 4 = 3');
+      assert(calculate('7', '÷', '1') === 7,        'division exact: 7 ÷ 1 = 7');
+
+      // ─── AC 3: Edge cases ────────────────────────────────────────────────
+      assert(calculate('5', '÷', '0') === 'Oops!',  'division by zero returns Oops!');
+
+      reset();
+      Calculator.dispatch('PRESS_DIGIT', '1');
+      Calculator.dispatch('PRESS_DIGIT', '2');
+      Calculator.dispatch('PRESS_DIGIT', '3');
+      Calculator.dispatch('PRESS_DIGIT', '4');
+      Calculator.dispatch('PRESS_DIGIT', '5'); // 5th digit ignored
+      assert(state.firstOperand === '1234',          '4-digit max enforced');
+
+      reset();
+      Calculator.dispatch('PRESS_DIGIT', '0');
+      Calculator.dispatch('PRESS_DIGIT', '5');
+      assert(state.firstOperand === '5',             'leading zero prevented: 0→5 gives 5');
+
+      reset();
+      Calculator.dispatch('PRESS_DIGIT', '3');
+      Calculator.dispatch('PRESS_OPERATOR', '+');
+      Calculator.dispatch('PRESS_DIGIT', '4');
+      Calculator.dispatch('PRESS_EQUALS');
+      Calculator.dispatch('PRESS_OPERATOR', '+');   // chain: result 7 becomes firstOperand
+      assert(state.firstOperand === '7',             'operator chain: result becomes firstOperand');
+      assert(state.phase === 'operator',             'operator chain: enters operator phase');
+
+      // ─── AC 4: Oops behaviour ────────────────────────────────────────────
+      reset();
+      Calculator.dispatch('PRESS_DIGIT', '4');
+      Calculator.dispatch('PRESS_DIGIT', '7');
+      Calculator.dispatch('PRESS_OOPS');
+      assert(state.firstOperand === '4',             'oops removes last digit: 47 → 4');
+
+      reset();
+      Calculator.dispatch('PRESS_DIGIT', '3');
+      Calculator.dispatch('PRESS_OOPS');
+      assert(state.phase === 'idle',                 'oops on single digit regresses to idle');
+      assert(state.firstOperand === '',              'oops on single digit clears firstOperand');
+
+      reset();
+      Calculator.dispatch('PRESS_DIGIT', '3');
+      Calculator.dispatch('PRESS_OPERATOR', '+');
+      Calculator.dispatch('PRESS_DIGIT', '5');
+      Calculator.dispatch('LONG_PRESS_CLEAR');
+      assert(state.phase === 'idle',                 'long-press clear: phase = idle');
+      assert(state.firstOperand === '',              'long-press clear: firstOperand empty');
+      assert(state.operator === null,                'long-press clear: operator null');
+      assert(state.secondOperand === '',             'long-press clear: secondOperand empty');
+      assert(state.result === null,                  'long-press clear: result null');
+
+      // ─── Summary ─────────────────────────────────────────────────────────
+      const summary = document.getElementById('summary');
+      summary.textContent = passed + ' passed, ' + failed + ' failed';
+      summary.style.color = failed === 0 ? 'green' : 'red';
+    </script>
   </body>
 </html>
