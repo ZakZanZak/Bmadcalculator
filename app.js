@@ -7,28 +7,28 @@ const oopsBtn      = document.getElementById('btn-oops');
 // ─── 2. Constants ────────────────────────────────────────────────────────────
 const MAX_DIGITS          = 4;
 const LONG_PRESS_DURATION = 600; // ms
+const API_URL             = 'https://p69frb2gm4.execute-api.us-east-1.amazonaws.com/Dev/calculate';
+const OPERATOR_MAP        = { '+': 'add', '−': 'subtract', '×': 'multiply', '÷': 'divide' };
 
 // ─── 3. State Object ─────────────────────────────────────────────────────────
 const state = {
-  phase:         'idle',   // 'idle' | 'first' | 'operator' | 'second' | 'result'
+  phase:         'idle',   // 'idle' | 'first' | 'operator' | 'second' | 'calculating' | 'result'
   firstOperand:  '',       // string of digits, e.g. '47'
-  operator:      null,     // '+' | '-' | '×' | '÷' | null
+  operator:      null,     // '+' | '−' | '×' | '÷' | null
   secondOperand: '',       // string of digits, e.g. '36'
-  result:        null      // number | null
+  result:        null      // number | 'Oops!' | null
 };
 
-// ─── 4. Calculation Engine (pure — no DOM, no state) ─────────────────────────
-function calculate(a, op, b) {
-  const numA = Number(a);
-  const numB = Number(b);
-  if (op === '÷') {
-    if (numB === 0) return 'Oops!';
-    return numA / numB;
-  }
-  if (op === '+') return numA + numB;
-  if (op === '−') return numA - numB; // U+2212 minus sign — matches data-value in HTML
-  if (op === '×') return numA * numB;
-  return null;
+// ─── 4. Calculation Engine (calls Lambda API) ─────────────────────────────────
+async function calculate(a, op, b) {
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ num1: Number(a), num2: Number(b), operation: OPERATOR_MAP[op] })
+  });
+  if (!response.ok) throw new Error('API error ' + response.status);
+  const data = await response.json();
+  return data.result; // expects { "result": <number> }
 }
 
 // ─── 5. State Helpers (pure — read state, return values) ─────────────────────
@@ -36,7 +36,7 @@ function buildEquationString(s) {
   if (s.phase === 'idle') return '';
   if (s.phase === 'first') return s.firstOperand;
   if (s.phase === 'operator') return s.firstOperand + ' ' + s.operator;
-  if (s.phase === 'second') return s.firstOperand + ' ' + s.operator + ' ' + s.secondOperand;
+  if (s.phase === 'second' || s.phase === 'calculating') return s.firstOperand + ' ' + s.operator + ' ' + s.secondOperand;
   if (s.phase === 'result') return s.firstOperand + ' ' + s.operator + ' ' + s.secondOperand + ' =';
   return '';
 }
@@ -47,18 +47,20 @@ function isEquationComplete(s) {
 
 function getActiveOperand(s) {
   if (s.phase === 'first') return 'firstOperand';
-  if (s.phase === 'second') return 'secondOperand'; // Story 2.2 will use this
+  if (s.phase === 'second') return 'secondOperand';
   return null;
 }
 
 // ─── 6. Dispatch + Render ────────────────────────────────────────────────────
 const Calculator = (() => {
-  function dispatch(action, payload) {
+  async function dispatch(action, payload) {
+    // Block all input while API call is in flight, except a clear
+    if (state.phase === 'calculating' && action !== 'LONG_PRESS_CLEAR') return;
+
     if (action === 'PRESS_DIGIT') {
       const digit = payload;
       if (state.phase === 'idle' || state.phase === 'first') {
         if (state.firstOperand === '0') {
-          // Leading zero: replace '0' with new digit (prevents '05', allows '0')
           state.firstOperand = digit;
         } else if (state.firstOperand.length < MAX_DIGITS) {
           state.firstOperand += digit;
@@ -108,8 +110,17 @@ const Calculator = (() => {
         }, { once: true });
         return; // EXCEPTION: return before render() — shake is the only visual feedback
       }
-      state.result = calculate(state.firstOperand, state.operator, state.secondOperand);
+      state.phase = 'calculating';
+      render(); // show '...' immediately while request is in flight
+      try {
+        const result = await calculate(state.firstOperand, state.operator, state.secondOperand);
+        state.result = (typeof result === 'number' && !isNaN(result)) ? result : 'Oops!';
+      } catch (_) {
+        state.result = 'Oops!';
+      }
       state.phase = 'result';
+      render();
+      return; // render already called above — don't fall through
     }
 
     if (action === 'PRESS_OOPS') {
@@ -157,6 +168,8 @@ const Calculator = (() => {
       answerEl.textContent = state.firstOperand;
     } else if (state.phase === 'second') {
       answerEl.textContent = state.secondOperand;
+    } else if (state.phase === 'calculating') {
+      answerEl.textContent = '...';
     } else if (state.phase === 'result') {
       answerEl.textContent = String(state.result);
       answerEl.classList.add('is-animating');
@@ -184,7 +197,7 @@ const Calculator = (() => {
 
 // ─── 7. Event Listeners ──────────────────────────────────────────────────────
 
-// Delegated click — all buttons (oops long-press handled separately in Story 3.2)
+// Delegated click — all buttons (oops long-press handled separately below)
 calculatorEl.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
