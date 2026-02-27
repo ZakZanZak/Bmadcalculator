@@ -43,17 +43,17 @@ development_status:
   epic-1: in-progress
   1-1-project-scaffold-html-calculator-structure: review
   1-2-css-design-system-visual-shell-responsive-layout: review
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   epic-2: in-progress
   2-1-state-machine-number-entry-operator-selection: review
   2-2-equation-completion-calculation-animated-answer: review
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   epic-3: in-progress
   3-1-short-press-oops-remove-last-digit: review
   3-2-long-press-oops-full-clear-with-visual-progress-feedback: review
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   epic-4: in-progress
   4-1-keyboard-support-aria-accessibility: review
